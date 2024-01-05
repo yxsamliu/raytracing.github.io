@@ -1,6 +1,15 @@
 #ifndef RTW_STB_IMAGE_H
 #define RTW_STB_IMAGE_H
 
+//
+// The original source code is from
+//    https://github.com/RayTracing/raytracing.github.io/tree/release/src/InOneWeekend
+//
+// Changes to the original code follow the following license.
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 // Disable strict warnings for this header from the Microsoft Visual C++ compiler.
 #ifdef _MSC_VER

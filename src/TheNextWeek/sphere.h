@@ -3,12 +3,22 @@
 //==============================================================================================
 // Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
-// To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is
-// distributed without any warranty.
+// To the extent possible under law, the author(s) have dedicated all copyright
+// and related and neighboring rights to this software to the public domain
+// worldwide. This software is distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
-// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+// You should have received a copy (see file COPYING.txt) of the CC0 Public
+// Domain Dedication along with this software. If not, see
+// <http://creativecommons.org/publicdomain/zero/1.0/>.
+//
+// The original source code is from
+//    https://github.com/RayTracing/raytracing.github.io/tree/release/src/InOneWeekend
+//
+// Changes to the original code follow the following license.
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //==============================================================================================
 
 #include "rtweekend.h"
@@ -19,7 +29,8 @@
 class sphere : public hittable {
   public:
     // Stationary Sphere
-    sphere(point3 _center, double _radius, shared_ptr<material> _material)
+    __host__ __device__ sphere(point3 _center, double _radius,
+                               SharedPtr<material> _material)
       : center1(_center), radius(_radius), mat(_material), is_moving(false)
     {
         auto rvec = vec3(radius, radius, radius);
@@ -27,7 +38,7 @@ class sphere : public hittable {
     }
 
     // Moving Sphere
-    sphere(point3 _center1, point3 _center2, double _radius, shared_ptr<material> _material)
+    __host__ __device__ sphere(point3 _center1, point3 _center2, double _radius, SharedPtr<material> _material)
       : center1(_center1), radius(_radius), mat(_material), is_moving(true)
     {
         auto rvec = vec3(radius, radius, radius);
@@ -38,34 +49,35 @@ class sphere : public hittable {
         center_vec = _center2 - _center1;
     }
 
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+    __host__ __device__ bool hit(const ray &r, interval ray_t,
+                                 hit_record &rec) const override {
         point3 center = is_moving ? sphere_center(r.time()) : center1;
-        vec3 oc = r.origin() - center;
-        auto a = r.direction().length_squared();
-        auto half_b = dot(oc, r.direction());
-        auto c = oc.length_squared() - radius*radius;
+      vec3 oc = r.origin() - center;
+      auto a = r.direction().length_squared();
+      auto half_b = dot(oc, r.direction());
+      auto c = oc.length_squared() - radius * radius;
 
-        auto discriminant = half_b*half_b - a*c;
-        if (discriminant < 0)
-            return false;
+      auto discriminant = half_b * half_b - a * c;
+      if (discriminant < 0)
+        return false;
 
-        // Find the nearest root that lies in the acceptable range.
-        auto sqrtd = sqrt(discriminant);
-        auto root = (-half_b - sqrtd) / a;
-        if (!ray_t.surrounds(root)) {
-            root = (-half_b + sqrtd) / a;
-            if (!ray_t.surrounds(root))
-                return false;
-        }
+      // Find the nearest root that lies in the acceptable range.
+      auto sqrtd = sqrt(discriminant);
+      auto root = (-half_b - sqrtd) / a;
+      if (!ray_t.surrounds(root)) {
+        root = (-half_b + sqrtd) / a;
+        if (!ray_t.surrounds(root))
+          return false;
+      }
 
-        rec.t = root;
-        rec.p = r.at(rec.t);
-        vec3 outward_normal = (rec.p - center) / radius;
-        rec.set_face_normal(r, outward_normal);
+      rec.t = root;
+      rec.p = r.at(rec.t);
+      vec3 outward_normal = (rec.p - center) / radius;
+      rec.set_face_normal(r, outward_normal);
         get_sphere_uv(outward_normal, rec.u, rec.v);
-        rec.mat = mat;
+      rec.mat = mat;
 
-        return true;
+      return true;
     }
 
     aabb bounding_box() const override { return bbox; }
@@ -73,18 +85,18 @@ class sphere : public hittable {
   private:
     point3 center1;
     double radius;
-    shared_ptr<material> mat;
+    SharedPtr<material> mat;
     bool is_moving;
     vec3 center_vec;
     aabb bbox;
 
-    point3 sphere_center(double time) const {
+    __host__ __device__ point3 sphere_center(double time) const {
         // Linearly interpolate from center1 to center2 according to time, where t=0 yields
         // center1, and t=1 yields center2.
         return center1 + time*center_vec;
     }
 
-    static void get_sphere_uv(const point3& p, double& u, double& v) {
+    __host__ __device__ static void get_sphere_uv(const point3& p, double& u, double& v) {
         // p: a given point on the sphere of radius one, centered at the origin.
         // u: returned value [0,1] of angle around the Y axis from X=-1.
         // v: returned value [0,1] of angle from Y=-1 to Y=+1.

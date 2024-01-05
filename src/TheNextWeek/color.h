@@ -3,12 +3,22 @@
 //==============================================================================================
 // Originally written in 2020 by Peter Shirley <ptrshrl@gmail.com>
 //
-// To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is
-// distributed without any warranty.
+// To the extent possible under law, the author(s) have dedicated all copyright
+// and related and neighboring rights to this software to the public domain
+// worldwide. This software is distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
-// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+// You should have received a copy (see file COPYING.txt) of the CC0 Public
+// Domain Dedication along with this software. If not, see
+// <http://creativecommons.org/publicdomain/zero/1.0/>.
+//
+// The original source code is from
+//    https://github.com/RayTracing/raytracing.github.io/tree/release/src/InOneWeekend
+//
+// Changes to the original code follow the following license.
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //==============================================================================================
 
 #include "vec3.h"

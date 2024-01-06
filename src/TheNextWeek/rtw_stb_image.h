@@ -17,7 +17,7 @@
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "external/stb_image.h"
+#include "../external/stb_image.h"
 
 #include <cstdlib>
 #include <iostream>

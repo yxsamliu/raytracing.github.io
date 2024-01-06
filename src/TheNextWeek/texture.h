@@ -43,14 +43,13 @@ class solid_color : public texture {
 
 class checker_texture : public texture {
   public:
-    checker_texture(double _scale, shared_ptr<texture> _even, shared_ptr<texture> _odd)
-      : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
+    checker_texture(double _scale, SharedPtr<texture> _even,
+                    SharedPtr<texture> _odd)
+        : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
 
     checker_texture(double _scale, color c1, color c2)
-      : inv_scale(1.0 / _scale),
-        even(make_shared<solid_color>(c1)),
-        odd(make_shared<solid_color>(c2))
-    {}
+        : inv_scale(1.0 / _scale), even(makeShared<solid_color>(c1)),
+          odd(makeShared<solid_color>(c2)) {}
 
     color value(double u, double v, const point3& p) const override {
         auto xInteger = static_cast<int>(std::floor(inv_scale * p.x()));
@@ -64,16 +63,16 @@ class checker_texture : public texture {
 
   private:
     double inv_scale;
-    shared_ptr<texture> even;
-    shared_ptr<texture> odd;
+    SharedPtr<texture> even;
+    SharedPtr<texture> odd;
 };
 
 
 class noise_texture : public texture {
   public:
-    noise_texture() {}
+    noise_texture(unsigned &rng) : noise(rng) {}
 
-    noise_texture(double sc) : scale(sc) {}
+    noise_texture(double sc, unsigned &rng) : noise(rng), scale(sc) {}
 
     color value(double u, double v, const point3& p) const override {
         auto s = scale * p;

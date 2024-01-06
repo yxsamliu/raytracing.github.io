@@ -13,6 +13,30 @@ public:
   // Destructor
   __host__ __device__ ~Vector() { delete[] data_; }
 
+  // Copy constructor
+  __host__ __device__ Vector(const Vector &other)
+      : size_(other.size_), capacity_(other.capacity_) {
+    data_ = new T[capacity_];
+    for (size_t i = 0; i < size_; ++i) {
+      data_[i] = other.data_[i];
+    }
+  }
+
+  // Copy assignment operator
+  __host__ __device__ Vector &operator=(const Vector &other) {
+    if (this != &other) {
+      delete[] data_;
+
+      size_ = other.size_;
+      capacity_ = other.capacity_;
+      data_ = new T[capacity_];
+      for (size_t i = 0; i < size_; ++i) {
+        data_[i] = other.data_[i];
+      }
+    }
+    return *this;
+  }
+
   // Add an element to the end of the vector
   __host__ __device__ void push_back(const T &value) {
     if (size_ >= capacity_) {
@@ -60,6 +84,11 @@ public:
     if (size_ > newSize)
       size_ = newSize;
   }
+  // Iterator support
+  __host__ __device__ T *begin() { return data_; }
+  __host__ __device__ T *end() { return data_ + size_; }
+  __host__ __device__ const T *begin() const { return data_; }
+  __host__ __device__ const T *end() const { return data_ + size_; }
 
 private:
   T *data_;         // Pointer to the data

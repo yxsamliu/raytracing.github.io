@@ -23,10 +23,18 @@
 
 #include "rtweekend.h"
 
+#include "PPMImageFile.h"
 #include "color.h"
 #include "hittable.h"
 #include "material.h"
+#include <chrono>
 #include <fstream>
+#include <iostream>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+
+#define BLKDIM_X 16
+#define BLKDIM_Y 16
 
 class camera {
   public:
@@ -68,6 +76,63 @@ class camera {
       }
 
       std::cout << "Done.\n";
+    }
+
+    void render(camera *cam, const hittable *world,
+                const std::string &file_name) {
+      const int grid_x = std::ceil((float)cam->image_width / BLKDIM_X);
+      const int grid_y = std::ceil((float)cam->image_height / BLKDIM_Y);
+      printf("image width = %d height = %d\n", cam->image_width,
+             cam->image_height);
+      printf("block size = (%d, %d) grid size = (%d, %d)\n", BLKDIM_X, BLKDIM_Y,
+             grid_x, grid_y);
+
+      std::string ref_file_name = file_name + "_ref.ppm";
+      std::string cpu_file_name;
+      PPMImageFile ref_image(ref_file_name);
+
+      // Check if the reference image file exists
+      std::ifstream ref_file(ref_file_name);
+      if (ref_file.good()) {
+        ref_file.close();
+        // File exists, use a separate name for CPU rendered file
+        cpu_file_name = file_name + "_cpu.ppm";
+
+        // Load reference image
+        ref_image.load();
+      } else {
+        // File does not exist, use its name for the CPU rendered file
+        cpu_file_name = ref_file_name;
+        std::cout << ref_file_name +
+                         " does not exist. Save CPU rendered image to it.\n";
+      }
+      PPMImageFile cpu_image(cpu_file_name, cam->image_width,
+                             cam->image_height);
+      std::chrono::duration<double, std::milli> cpu_duration;
+      if (Cfg.compare_cpu) {
+        std::cout << std::string("Start rendering ") + cpu_file_name +
+                         " by CPU.\n";
+        auto start_cpu = std::chrono::high_resolution_clock::now();
+        cam->render(*world, cpu_image.getHostPtr());
+        auto end_cpu = std::chrono::high_resolution_clock::now();
+        cpu_duration = end_cpu - start_cpu;
+        cpu_image.normalize();
+        cpu_image.save();
+        cpu_image.compare(ref_image);
+
+        // Conditionally output timing information
+        if (Cfg.output_time) {
+          int total_pixels = cam->image_width * cam->image_height;
+          double cpu_time_per_pixel = cpu_duration.count() / total_pixels;
+          printf("CPU Time: %f s\n", cpu_duration.count() / 1000);
+          printf("CPU Time per Pixel: %f ms\n", cpu_time_per_pixel);
+        }
+      }
+    }
+
+    void render(const hittable &world, const std::string &file_name = "") {
+      initialize();
+      render(this, &world, file_name);
     }
 
   private:
@@ -169,21 +234,22 @@ class camera {
       hit_record rec;
 
         // If the ray hits nothing, return the background color.
-        if (!world.hit(r, interval(0.001, infinity), rec))
-            return background;
+      if (!world.hit(r, interval(0.001, infinity), rec, rnd))
+        return background;
 
-        ray scattered;
-        color attenuation;
-        color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+      ray scattered;
+      color attenuation;
+      color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
 
-        if (!rec.mat->scatter(r, rec, attenuation, scattered, rnd))
-            return color_from_emission;
+      if (!rec.mat->scatter(r, rec, attenuation, scattered, rnd))
+        return color_from_emission;
 
-        color color_from_scatter = attenuation * ray_color(scattered, depth-1, world, rnd);
+      color color_from_scatter =
+          attenuation * ray_color(scattered, depth - 1, world, rnd);
 
-        return color_from_emission + color_from_scatter;
+      return color_from_emission + color_from_scatter;
     }
 };
 
-
+#pragma clang diagnostic pop
 #endif

@@ -45,15 +45,16 @@ class hittable_list : public hittable {
         bbox = aabb(bbox, object->bounding_box());
     }
 
-    __host__ __device__ bool hit(const ray &r, interval ray_t,
-                                 hit_record &rec) const override {
+    __host__ __device__ bool hit(const ray &r, interval ray_t, hit_record &rec,
+                                 unsigned &rng) const override {
       hit_record temp_rec;
       auto hit_anything = false;
       auto closest_so_far = ray_t.max;
 
       for (unsigned I = 0, E = objects.size(); I != E; ++I) {
         const auto &object = objects[I];
-        if (object->hit(r, interval(ray_t.min, closest_so_far), temp_rec)) {
+        if (object->hit(r, interval(ray_t.min, closest_so_far), temp_rec,
+                        rng)) {
           hit_anything = true;
           closest_so_far = temp_rec.t;
           rec = temp_rec;
@@ -63,7 +64,7 @@ class hittable_list : public hittable {
       return hit_anything;
     }
 
-    aabb bounding_box() const override { return bbox; }
+    __host__ __device__ aabb bounding_box() const override { return bbox; }
 
   private:
     aabb bbox;

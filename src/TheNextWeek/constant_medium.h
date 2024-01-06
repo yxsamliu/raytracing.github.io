@@ -20,67 +20,78 @@
 
 class constant_medium : public hittable {
   public:
-    constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
-      : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(a))
-    {}
+    __host__ __device__ constant_medium(SharedPtr<hittable> b, double d,
+                                        SharedPtr<texture> a)
+        : boundary(b), neg_inv_density(-1 / d),
+          phase_function(makeShared<isotropic>(a)) {}
 
-    constant_medium(shared_ptr<hittable> b, double d, color c)
-      : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(c))
-    {}
+    __host__ __device__ constant_medium(SharedPtr<hittable> b, double d,
+                                        color c)
+        : boundary(b), neg_inv_density(-1 / d),
+          phase_function(makeShared<isotropic>(c)) {}
 
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-        // Print occasional samples when debugging. To enable, set enableDebug true.
-        const bool enableDebug = false;
-        const bool debugging = enableDebug && random_double() < 0.00001;
+    __host__ __device__ bool hit(const ray &r, interval ray_t, hit_record &rec,
+                                 unsigned &rng) const override {
+      // Print occasional samples when debugging. To enable, set enableDebug
+      // true.
+#if DEBUG
+      const bool enableDebug = false;
+      const bool debugging = enableDebug && random_double(rng) < 0.00001;
+#endif
+      hit_record rec1, rec2;
 
-        hit_record rec1, rec2;
+      if (!boundary->hit(r, interval::universe, rec1, rng))
+        return false;
 
-        if (!boundary->hit(r, interval::universe, rec1))
-            return false;
+      if (!boundary->hit(r, interval(rec1.t + 0.0001, infinity), rec2, rng))
+        return false;
 
-        if (!boundary->hit(r, interval(rec1.t+0.0001, infinity), rec2))
-            return false;
+#if DEBUG
+      if (debugging)
+        std::clog << "\nt_min=" << rec1.t << ", t_max=" << rec2.t << '\n';
+#endif
+      if (rec1.t < ray_t.min)
+        rec1.t = ray_t.min;
+      if (rec2.t > ray_t.max)
+        rec2.t = ray_t.max;
 
-        if (debugging) std::clog << "\nt_min=" << rec1.t << ", t_max=" << rec2.t << '\n';
+      if (rec1.t >= rec2.t)
+        return false;
 
-        if (rec1.t < ray_t.min) rec1.t = ray_t.min;
-        if (rec2.t > ray_t.max) rec2.t = ray_t.max;
+      if (rec1.t < 0)
+        rec1.t = 0;
 
-        if (rec1.t >= rec2.t)
-            return false;
+      auto ray_length = r.direction().length();
+      auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
+      auto hit_distance = neg_inv_density * log(random_double(rng));
 
-        if (rec1.t < 0)
-            rec1.t = 0;
+      if (hit_distance > distance_inside_boundary)
+        return false;
 
-        auto ray_length = r.direction().length();
-        auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
-        auto hit_distance = neg_inv_density * log(random_double());
+      rec.t = rec1.t + hit_distance / ray_length;
+      rec.p = r.at(rec.t);
+#if DEBUG
+      if (debugging) {
+        std::clog << "hit_distance = " << hit_distance << '\n'
+                  << "rec.t = " << rec.t << '\n'
+                  << "rec.p = " << rec.p << '\n';
+      }
+#endif
+      rec.normal = vec3(1, 0, 0); // arbitrary
+      rec.front_face = true;      // also arbitrary
+      rec.mat = phase_function;
 
-        if (hit_distance > distance_inside_boundary)
-            return false;
-
-        rec.t = rec1.t + hit_distance / ray_length;
-        rec.p = r.at(rec.t);
-
-        if (debugging) {
-            std::clog << "hit_distance = " <<  hit_distance << '\n'
-                      << "rec.t = " <<  rec.t << '\n'
-                      << "rec.p = " <<  rec.p << '\n';
-        }
-
-        rec.normal = vec3(1,0,0);  // arbitrary
-        rec.front_face = true;     // also arbitrary
-        rec.mat = phase_function;
-
-        return true;
+      return true;
     }
 
-    aabb bounding_box() const override { return boundary->bounding_box(); }
+    __host__ __device__ aabb bounding_box() const override {
+      return boundary->bounding_box();
+    }
 
   private:
-    shared_ptr<hittable> boundary;
+    SharedPtr<hittable> boundary;
     double neg_inv_density;
-    shared_ptr<material> phase_function;
+    SharedPtr<material> phase_function;
 };
 
 

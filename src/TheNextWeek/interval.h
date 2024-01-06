@@ -61,8 +61,9 @@ class interval {
 const interval interval::empty    = interval(+infinity, -infinity);
 const interval interval::universe = interval(-infinity, +infinity);
 
-__host__ ___device__ interval operator+(const interval& ival, double displacement) {
-    return interval(ival.min + displacement, ival.max + displacement);
+__host__ __device__ interval operator+(const interval &ival,
+                                       double displacement) {
+  return interval(ival.min + displacement, ival.max + displacement);
 }
 
 __host__ __device__ interval operator+(double displacement, const interval& ival) {

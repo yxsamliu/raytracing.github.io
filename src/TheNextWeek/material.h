@@ -31,8 +31,9 @@ class material {
   public:
     virtual __host__ __device__ ~material() = default;
 
-    virtual color emitted(double u, double v, const point3& p) const {
-        return color(0,0,0);
+    virtual __host__ __device__ color emitted(double u, double v,
+                                              const point3 &p) const {
+      return color(0, 0, 0);
     }
 
     virtual __host__ __device__ bool scatter(const ray &r_in,
@@ -44,7 +45,8 @@ class material {
 
 class lambertian : public material {
   public:
-    __host__ __device__ lambertian(const color& a) : albedo(MakeShared<solid_color>(a)) {}
+    __host__ __device__ lambertian(const color &a)
+        : albedo(makeShared<solid_color>(a)) {}
     __host__ __device__ lambertian(SharedPtr<texture> a) : albedo(a) {}
 
     virtual __host__ __device__ bool scatter(const ray &r_in,
@@ -58,8 +60,8 @@ class lambertian : public material {
       if (scatter_direction.near_zero())
         scatter_direction = rec.normal;
 
-        scattered = ray(rec.p, scatter_direction, r_in.time());
-        attenuation = albedo->value(rec.u, rec.v, rec.p);
+      scattered = ray(rec.p, scatter_direction, r_in.time());
+      attenuation = albedo->value(rec.u, rec.v, rec.p);
       return true;
     }
 
@@ -112,7 +114,7 @@ class dielectric : public material {
       else
         direction = refract(unit_direction, rec.normal, refraction_ratio);
 
-        scattered = ray(rec.p, direction, r_in.time());
+      scattered = ray(rec.p, direction, r_in.time());
       return true;
     }
 
@@ -132,15 +134,18 @@ class dielectric : public material {
 class diffuse_light : public material {
   public:
     __host__ __device__ diffuse_light(SharedPtr<texture> a) : emit(a) {}
-    __host__ __device__ diffuse_light(color c) : emit(MakeShared<solid_color>(c)) {}
+    __host__ __device__ diffuse_light(color c)
+        : emit(makeShared<solid_color>(c)) {}
 
-    bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
-    const override {
-        return false;
+    __host__ __device__ bool scatter(const ray &r_in, const hit_record &rec,
+                                     color &attenuation, ray &scattered,
+                                     unsigned &rnd) const override {
+      return false;
     }
 
-    color emitted(double u, double v, const point3& p) const override {
-        return emit->value(u, v, p);
+    __host__ __device__ color emitted(double u, double v,
+                                      const point3 &p) const override {
+      return emit->value(u, v, p);
     }
 
   private:
@@ -150,7 +155,8 @@ class diffuse_light : public material {
 
 class isotropic : public material {
   public:
-    __host__ __device__ isotropic(color c) : albedo(MakeShared<solid_color>(c)) {}
+    __host__ __device__ isotropic(color c)
+        : albedo(makeShared<solid_color>(c)) {}
     __host__ __device__ isotropic(SharedPtr<texture> a) : albedo(a) {}
 
     __host__ __device__ bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, unsigned& rnd)

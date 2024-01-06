@@ -16,15 +16,15 @@
 
 class perlin {
   public:
-    perlin() {
-        ranvec = new vec3[point_count];
-        for (int i = 0; i < point_count; ++i) {
-            ranvec[i] = unit_vector(vec3::random(-1,1));
-        }
+    perlin(unsigned &rng) {
+      ranvec = new vec3[point_count];
+      for (int i = 0; i < point_count; ++i) {
+        ranvec[i] = unit_vector(vec3::random(-1, 1, rng));
+      }
 
-        perm_x = perlin_generate_perm();
-        perm_y = perlin_generate_perm();
-        perm_z = perlin_generate_perm();
+      perm_x = perlin_generate_perm(rng);
+      perm_y = perlin_generate_perm(rng);
+      perm_z = perlin_generate_perm(rng);
     }
 
     ~perlin() {
@@ -76,24 +76,24 @@ class perlin {
     int* perm_y;
     int* perm_z;
 
-    static int* perlin_generate_perm() {
-        auto p = new int[point_count];
+    static int *perlin_generate_perm(unsigned &rng) {
+      auto p = new int[point_count];
 
-        for (int i = 0; i < point_count; i++)
-            p[i] = i;
+      for (int i = 0; i < point_count; i++)
+        p[i] = i;
 
-        permute(p, point_count);
+      permute(p, point_count, rng);
 
-        return p;
+      return p;
     }
 
-    static void permute(int* p, int n) {
-        for (int i = n-1; i > 0; i--) {
-            int target = random_int(0,i);
-            int tmp = p[i];
-            p[i] = p[target];
-            p[target] = tmp;
-        }
+    static void permute(int *p, int n, unsigned &rng) {
+      for (int i = n - 1; i > 0; i--) {
+        int target = random_int(0, i, rng);
+        int tmp = p[i];
+        p[i] = p[target];
+        p[target] = tmp;
+      }
     }
 
     static double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {

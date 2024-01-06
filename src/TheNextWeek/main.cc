@@ -20,11 +20,36 @@
 #include "quad.h"
 #include "sphere.h"
 #include "texture.h"
+#include <functional>
+#include <map>
 
+class Scene {
+public:
+  void render(const std::string &file_name) { cam.render(world, file_name); }
 
-void random_spheres() {
-    hittable_list world;
+protected:
+  hittable_list world;
+  camera cam;
+};
 
+TestConfig Cfg;
+
+template <typename S> class Test {
+public:
+  static void run(int image_width, int samples_per_pixel, int max_depth,
+                  const std::string &file_name) {
+    S s(image_width, samples_per_pixel, max_depth);
+    s.render(file_name);
+  }
+  static void run(const std::string &file_name) {
+    S s;
+    s.render(file_name);
+  }
+};
+
+class random_spheres : public Scene {
+public:
+  random_spheres() {
     auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
 
@@ -68,8 +93,6 @@ void random_spheres() {
 
     world = hittable_list(make_shared<bvh_node>(world));
 
-    camera cam;
-
     cam.aspect_ratio      = 16.0 / 9.0;
     cam.image_width       = 400;
     cam.samples_per_pixel = 100;
@@ -83,20 +106,16 @@ void random_spheres() {
 
     cam.defocus_angle = 0.02;
     cam.focus_dist    = 10.0;
+  }
+};
 
-    cam.render(world);
-}
-
-
-void two_spheres() {
-    hittable_list world;
-
+class two_spheres : public Scene {
+public:
+  two_spheres() {
     auto checker = make_shared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
 
     world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
     world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker)));
-
-    camera cam;
 
     cam.aspect_ratio      = 16.0 / 9.0;
     cam.image_width       = 400;
@@ -110,17 +129,15 @@ void two_spheres() {
     cam.vup      = vec3(0,1,0);
 
     cam.defocus_angle = 0;
+  }
+};
 
-    cam.render(world);
-}
-
-
-void earth() {
+class earth : public Scene {
+public:
+  earth() {
     auto earth_texture = make_shared<image_texture>("earthmap.jpg");
     auto earth_surface = make_shared<lambertian>(earth_texture);
     auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface);
-
-    camera cam;
 
     cam.aspect_ratio      = 16.0 / 9.0;
     cam.image_width       = 400;
@@ -135,18 +152,16 @@ void earth() {
 
     cam.defocus_angle = 0;
 
-    cam.render(hittable_list(globe));
-}
+    world.add(globe);
+  }
+};
 
-
-void two_perlin_spheres() {
-    hittable_list world;
-
+class two_perlin_spheres : public Scene {
+public:
+  two_perlin_spheres() {
     auto pertext = make_shared<noise_texture>(4);
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
     world.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
-
-    camera cam;
 
     cam.aspect_ratio      = 16.0 / 9.0;
     cam.image_width       = 400;
@@ -160,14 +175,12 @@ void two_perlin_spheres() {
     cam.vup      = vec3(0,1,0);
 
     cam.defocus_angle = 0;
+  }
+};
 
-    cam.render(world);
-}
-
-
-void quads() {
-    hittable_list world;
-
+class quads : public Scene {
+public:
+  quads() {
     // Materials
     auto left_red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
     auto back_green   = make_shared<lambertian>(color(0.2, 1.0, 0.2));
@@ -182,8 +195,6 @@ void quads() {
     world.add(make_shared<quad>(point3(-2, 3, 1), vec3(4, 0, 0), vec3(0, 0, 4), upper_orange));
     world.add(make_shared<quad>(point3(-2,-3, 5), vec3(4, 0, 0), vec3(0, 0,-4), lower_teal));
 
-    camera cam;
-
     cam.aspect_ratio      = 1.0;
     cam.image_width       = 400;
     cam.samples_per_pixel = 100;
@@ -196,14 +207,12 @@ void quads() {
     cam.vup      = vec3(0,1,0);
 
     cam.defocus_angle = 0;
+  }
+};
 
-    cam.render(world);
-}
-
-
-void simple_light() {
-    hittable_list world;
-
+class simple_light : public Scene {
+public:
+  simple_light() {
     auto pertext = make_shared<noise_texture>(4);
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
     world.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
@@ -211,8 +220,6 @@ void simple_light() {
     auto difflight = make_shared<diffuse_light>(color(4,4,4));
     world.add(make_shared<sphere>(point3(0,7,0), 2, difflight));
     world.add(make_shared<quad>(point3(3,1,-2), vec3(2,0,0), vec3(0,2,0), difflight));
-
-    camera cam;
 
     cam.aspect_ratio      = 16.0 / 9.0;
     cam.image_width       = 400;
@@ -226,14 +233,12 @@ void simple_light() {
     cam.vup      = vec3(0,1,0);
 
     cam.defocus_angle = 0;
+  }
+};
 
-    cam.render(world);
-}
-
-
-void cornell_box() {
-    hittable_list world;
-
+class cornell_box : public Scene {
+public:
+  cornell_box() {
     auto red   = make_shared<lambertian>(color(.65, .05, .05));
     auto white = make_shared<lambertian>(color(.73, .73, .73));
     auto green = make_shared<lambertian>(color(.12, .45, .15));
@@ -256,8 +261,6 @@ void cornell_box() {
     box2 = make_shared<translate>(box2, vec3(130,0,65));
     world.add(box2);
 
-    camera cam;
-
     cam.aspect_ratio      = 1.0;
     cam.image_width       = 600;
     cam.samples_per_pixel = 200;
@@ -270,14 +273,12 @@ void cornell_box() {
     cam.vup      = vec3(0,1,0);
 
     cam.defocus_angle = 0;
+  }
+};
 
-    cam.render(world);
-}
-
-
-void cornell_smoke() {
-    hittable_list world;
-
+class cornell_smoke : public Scene {
+public:
+  cornell_smoke() {
     auto red   = make_shared<lambertian>(color(.65, .05, .05));
     auto white = make_shared<lambertian>(color(.73, .73, .73));
     auto green = make_shared<lambertian>(color(.12, .45, .15));
@@ -301,8 +302,6 @@ void cornell_smoke() {
     world.add(make_shared<constant_medium>(box1, 0.01, color(0,0,0)));
     world.add(make_shared<constant_medium>(box2, 0.01, color(1,1,1)));
 
-    camera cam;
-
     cam.aspect_ratio      = 1.0;
     cam.image_width       = 600;
     cam.samples_per_pixel = 200;
@@ -315,12 +314,12 @@ void cornell_smoke() {
     cam.vup      = vec3(0,1,0);
 
     cam.defocus_angle = 0;
+  }
+};
 
-    cam.render(world);
-}
-
-
-void final_scene(int image_width, int samples_per_pixel, int max_depth) {
+class final_scene : public Scene {
+public:
+  final_scene(int image_width, int samples_per_pixel, int max_depth) {
     hittable_list boxes1;
     auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
 
@@ -338,8 +337,6 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth) {
             boxes1.add(box(point3(x0,y0,z0), point3(x1,y1,z1), ground));
         }
     }
-
-    hittable_list world;
 
     world.add(make_shared<bvh_node>(boxes1));
 
@@ -381,8 +378,6 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth) {
         )
     );
 
-    camera cam;
-
     cam.aspect_ratio      = 1.0;
     cam.image_width       = image_width;
     cam.samples_per_pixel = samples_per_pixel;
@@ -395,22 +390,62 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth) {
     cam.vup      = vec3(0,1,0);
 
     cam.defocus_angle = 0;
+  }
+};
 
-    cam.render(world);
-}
+int main(int argc, char *argv[]) {
+  std::string scene = "final_coarse"; // default scene
+  bool runAll = false;
 
-
-int main() {
-    switch (0) {
-        case 1:  random_spheres();            break;
-        case 2:  two_spheres();               break;
-        case 3:  earth();                     break;
-        case 4:  two_perlin_spheres();        break;
-        case 5:  quads();                     break;
-        case 6:  simple_light();              break;
-        case 7:  cornell_box();               break;
-        case 8:  cornell_smoke();             break;
-        case 9:  final_scene(800, 10000, 40); break;
-        default: final_scene(400,   250,  4); break;
+  // Parse command line arguments
+  for (int i = 1; i < argc; i++) {
+    if (std::string(argv[i]) == "-s") {
+      if (i + 1 < argc) {
+        scene = argv[++i];
+        if (scene == "all") {
+          runAll = true;
+          break;
+        }
+      }
+    } else if (strcmp(argv[i], "-t") == 0) {
+      Cfg.output_time = true;
+    } else if (strcmp(argv[i], "-c") == 0) {
+      Cfg.compare_cpu = true;
     }
+  }
+  // Map of scene names to their corresponding Test::run functions
+  std::map<std::string, std::function<void()>> scenes = {
+      {"quads", []() { Test<quads>::run("quads"); }},
+      {"two_spheres", []() { Test<two_spheres>::run("two_spheres"); }},
+      {"earth", []() { Test<earth>::run("earth"); }},
+      {"two_perlin_spheres",
+       []() { Test<two_perlin_spheres>::run("two_perlin_spheres"); }},
+      {"simple_light", []() { Test<simple_light>::run("simple_light"); }},
+      {"random_spheres", []() { Test<random_spheres>::run("random_spheres"); }},
+      {"cornell_box", []() { Test<cornell_box>::run("cornell_box"); }},
+      {"cornell_smoke", []() { Test<cornell_smoke>::run("cornell_smoke"); }},
+      {"final_coarse",
+       []() { Test<final_scene>::run(400, 250, 4, "final_coarse"); }},
+      {"final_detailed",
+       []() { Test<final_scene>::run(800, 10000, 40, "final_detailed"); }},
+  };
+
+  if (runAll) {
+    // Run all tests
+    for (auto &test : scenes) {
+      std::cout << "Running " << test.first << std::endl;
+      test.second();
+    }
+  } else {
+    // Find and run the specified scene
+    auto it = scenes.find(scene);
+    if (it != scenes.end()) {
+      it->second(); // Run the scene
+    } else {
+      std::cerr << "Unknown scene: " << scene << std::endl;
+      return 1;
+    }
+  }
+
+  return 0;
 }

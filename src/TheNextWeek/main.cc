@@ -452,8 +452,8 @@ int main(int argc, char *argv[]) {
       Cfg.compare_cpu = true;
     }
   }
-  // Map of scene names to their corresponding Test::run functions
-  std::map<std::string, std::function<void()>> scenes = {
+  // Vector of pairs to store scene names and their corresponding functions
+  std::vector<std::pair<std::string, std::function<void()>>> scenes = {
       {"quads", []() { Test<quads>::run("quads"); }},
       {"two_spheres", []() { Test<two_spheres>::run("two_spheres"); }},
       {"earth", []() { Test<earth>::run("earth"); }},
@@ -477,10 +477,15 @@ int main(int argc, char *argv[]) {
     }
   } else {
     // Find and run the specified scene
-    auto it = scenes.find(scene);
-    if (it != scenes.end()) {
-      it->second(); // Run the scene
-    } else {
+    bool found = false;
+    for (const auto &pair : scenes) {
+      if (pair.first == scene) {
+        pair.second(); // Run the scene
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
       std::cerr << "Unknown scene: " << scene << std::endl;
       return 1;
     }

@@ -23,6 +23,8 @@
 #include <functional>
 #include <map>
 
+rtw_image::TexDBTy rtw_image::TexDB;
+
 class Scene {
 public:
   void render(const std::string &file_name) { cam.render(world, file_name); }
@@ -452,6 +454,9 @@ int main(int argc, char *argv[]) {
       Cfg.compare_cpu = true;
     }
   }
+
+  rtw_image::pre_load("earthmap.jpg");
+
   // Vector of pairs to store scene names and their corresponding functions
   std::vector<std::pair<std::string, std::function<void()>>> scenes = {
       {"quads", []() { Test<quads>::run("quads"); }},

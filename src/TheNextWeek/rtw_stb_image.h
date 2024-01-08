@@ -19,6 +19,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image.h"
 
+#include "String.h"
 #include <cstdlib>
 #include <iostream>
 #include <unordered_map>
@@ -100,9 +101,9 @@ class rtw_image {
         std::string name = filename;
         if (lastSlashPos != std::string::npos)
           name = name.substr(lastSlashPos + 1);
-        auto Loc = TexDB.find(name);
+        auto Loc = TexDB.find(name.c_str());
         if (Loc == TexDB.end())
-          TexDB[name] = makeShared<rtw_image>(width, height, data_);
+          TexDB[name.c_str()] = makeShared<rtw_image>(width, height, data_);
       }
       return data_ != nullptr;
     }
@@ -142,7 +143,7 @@ class rtw_image {
       return high - 1;
     }
 
-    typedef std::unordered_map<std::string, SharedPtr<rtw_image>> TexDBTy;
+    typedef std::unordered_map<String, SharedPtr<rtw_image>> TexDBTy;
     static TexDBTy TexDB;
 };
 

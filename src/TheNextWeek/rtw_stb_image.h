@@ -19,6 +19,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image.h"
 
+#include "Map.h"
 #include "String.h"
 #include <cstdlib>
 #include <iostream>
@@ -143,7 +144,7 @@ class rtw_image {
       return high - 1;
     }
 
-    typedef std::unordered_map<String, SharedPtr<rtw_image>> TexDBTy;
+    typedef Map<String, SharedPtr<rtw_image>> TexDBTy;
     static TexDBTy TexDB;
 };
 

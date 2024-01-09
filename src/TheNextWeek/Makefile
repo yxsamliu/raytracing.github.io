@@ -20,7 +20,9 @@ $(PROGRAM): $(OBJECTS)
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) -xhip -c $< -o $@
 
-main.o : main.cc camera.h  color.h  hittable.h  hittable_list.h  interval.h  material.h  PPMImageFile.h  ray.h  rtweekend.h  rtw_stb_image.h  sphere.h  vec3.h DeviceArray.h Makefile SharedPtr.h Vector.h aabb.h
+main.o : main.cc camera.h  color.h  hittable.h  hittable_list.h  interval.h  material.h  \
+   PPMImageFile.h  ray.h  rtweekend.h  rtw_stb_image.h  sphere.h  vec3.h DeviceArray.h \
+   Makefile SharedPtr.h Vector.h aabb.h String.h Map.h
 
 # Clean target
 clean:

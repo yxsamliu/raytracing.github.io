@@ -10,6 +10,14 @@ public:
   // Constructor
   __host__ __device__ Vector() : data_(nullptr), size_(0), capacity_(0) {}
 
+  // Constructor with size parameter
+  __host__ __device__ Vector(size_t initialSize)
+      : data_(new T[initialSize]), size_(initialSize), capacity_(initialSize) {
+    for (size_t i = 0; i < size_; ++i) {
+      data_[i] = T(); // Default-construct each element
+    }
+  }
+
   // Destructor
   __host__ __device__ ~Vector() { delete[] data_; }
 

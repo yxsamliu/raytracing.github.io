@@ -1,9 +1,9 @@
 #pragma once
 
 #include "List.h"
+#include "Vector.h"
 #include <stdexcept>
 #include <utility>
-#include <vector>
 
 template <typename T1, typename T2> class Pair {
 public:
@@ -20,7 +20,7 @@ public:
 template <typename KeyType, typename ValueType> class Map {
 private:
   size_t bucketCount;
-  std::vector<List<Pair<KeyType, ValueType>>> buckets;
+  Vector<List<Pair<KeyType, ValueType>>> buckets;
 
   __host__ __device__ size_t getBucketIndex(const KeyType &key) const {
     return std::hash<KeyType>{}(key) % bucketCount;
@@ -101,14 +101,14 @@ public:
   // Custom iterator class
   class Iterator {
   private:
-    typename std::vector<List<Pair<KeyType, ValueType>>>::iterator bucketIt;
-    typename std::vector<List<Pair<KeyType, ValueType>>>::iterator bucketItEnd;
+    typename Vector<List<Pair<KeyType, ValueType>>>::iterator bucketIt;
+    typename Vector<List<Pair<KeyType, ValueType>>>::iterator bucketItEnd;
     typename List<Pair<KeyType, ValueType>>::iterator listIt;
 
   public:
-    __host__ __device__ Iterator(
-        typename std::vector<List<Pair<KeyType, ValueType>>>::iterator start,
-        typename std::vector<List<Pair<KeyType, ValueType>>>::iterator end)
+    __host__ __device__
+    Iterator(typename Vector<List<Pair<KeyType, ValueType>>>::iterator start,
+             typename Vector<List<Pair<KeyType, ValueType>>>::iterator end)
         : bucketIt(start), bucketItEnd(end) {
       if (bucketIt != bucketItEnd) {
         listIt = bucketIt->begin();

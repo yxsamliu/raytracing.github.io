@@ -84,11 +84,83 @@ public:
     if (size_ > newSize)
       size_ = newSize;
   }
-  // Iterator support
-  __host__ __device__ T *begin() { return data_; }
-  __host__ __device__ T *end() { return data_ + size_; }
-  __host__ __device__ const T *begin() const { return data_; }
-  __host__ __device__ const T *end() const { return data_ + size_; }
+  class iterator {
+  public:
+    using difference_type = ptrdiff_t;
+    using value_type = T;
+    using pointer = T *;
+    using reference = T &;
+    using iterator_category = std::random_access_iterator_tag;
+    // Default constructor
+    __host__ __device__ iterator() : ptr_(nullptr) {}
+
+    // Constructor with pointer
+    __host__ __device__ iterator(T *ptr) : ptr_(ptr) {}
+
+    // Dereference operator
+    __host__ __device__ T &operator*() const { return *ptr_; }
+
+    // Arrow operator
+    __host__ __device__ T *operator->() const { return ptr_; }
+
+    // Pre-increment operator
+    __host__ __device__ iterator &operator++() {
+      ptr_++;
+      return *this;
+    }
+
+    // Post-increment operator
+    __host__ __device__ iterator operator++(int) {
+      iterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
+    __host__ __device__ iterator operator+(int n) const {
+      return iterator(ptr_ + n);
+    }
+
+    __host__ __device__ iterator operator-(int n) const {
+      return iterator(ptr_ - n);
+    }
+
+    __host__ __device__ ptrdiff_t operator-(const iterator &other) const {
+      return ptr_ - other.ptr_;
+    }
+
+    // Equality comparison
+    __host__ __device__ bool operator==(const iterator &other) const {
+      return ptr_ == other.ptr_;
+    }
+
+    // Inequality comparison
+    __host__ __device__ bool operator!=(const iterator &other) const {
+      return ptr_ != other.ptr_;
+    }
+    __host__ __device__ bool operator<(const iterator &other) const {
+      return ptr_ < other.ptr_;
+    }
+
+    // Pre-decrement operator
+    __host__ __device__ iterator &operator--() {
+      --ptr_;
+      return *this;
+    }
+
+    // Post-decrement operator
+    __host__ __device__ iterator operator--(int) {
+      iterator tmp = *this;
+      --(*this);
+      return tmp;
+    }
+
+  private:
+    T *ptr_;
+  };
+
+  // Iterator support using the new iterator class
+  __host__ __device__ iterator begin() { return iterator(data_); }
+  __host__ __device__ iterator end() { return iterator(data_ + size_); }
 
 private:
   T *data_;         // Pointer to the data

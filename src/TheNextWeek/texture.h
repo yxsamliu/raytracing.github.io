@@ -16,98 +16,94 @@
 #include "perlin.h"
 #include "rtw_stb_image.h"
 
+class rt_texture {
+public:
+  virtual ~rt_texture() = default;
 
-class texture {
-  public:
-    virtual ~texture() = default;
-
-    virtual color value(double u, double v, const point3& p) const = 0;
+  virtual color value(double u, double v, const point3 &p) const = 0;
 };
 
+class solid_color : public rt_texture {
+public:
+  solid_color(color c) : color_value(c) {}
 
-class solid_color : public texture {
-  public:
-    solid_color(color c) : color_value(c) {}
+  solid_color(double red, double green, double blue)
+      : solid_color(color(red, green, blue)) {}
 
-    solid_color(double red, double green, double blue)
-      : solid_color(color(red,green,blue)) {}
+  color value(double u, double v, const point3 &p) const override {
+    return color_value;
+  }
 
-    color value(double u, double v, const point3& p) const override {
-        return color_value;
-    }
-
-  private:
-    color color_value;
+private:
+  color color_value;
 };
 
+class checker_texture : public rt_texture {
+public:
+  checker_texture(double _scale, SharedPtr<rt_texture> _even,
+                  SharedPtr<rt_texture> _odd)
+      : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
 
-class checker_texture : public texture {
-  public:
-    checker_texture(double _scale, SharedPtr<texture> _even,
-                    SharedPtr<texture> _odd)
-        : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
+  checker_texture(double _scale, color c1, color c2)
+      : inv_scale(1.0 / _scale), even(makeShared<solid_color>(c1)),
+        odd(makeShared<solid_color>(c2)) {}
 
-    checker_texture(double _scale, color c1, color c2)
-        : inv_scale(1.0 / _scale), even(makeShared<solid_color>(c1)),
-          odd(makeShared<solid_color>(c2)) {}
+  color value(double u, double v, const point3 &p) const override {
+    auto xInteger = static_cast<int>(std::floor(inv_scale * p.x()));
+    auto yInteger = static_cast<int>(std::floor(inv_scale * p.y()));
+    auto zInteger = static_cast<int>(std::floor(inv_scale * p.z()));
 
-    color value(double u, double v, const point3& p) const override {
-        auto xInteger = static_cast<int>(std::floor(inv_scale * p.x()));
-        auto yInteger = static_cast<int>(std::floor(inv_scale * p.y()));
-        auto zInteger = static_cast<int>(std::floor(inv_scale * p.z()));
+    bool isEven = (xInteger + yInteger + zInteger) % 2 == 0;
 
-        bool isEven = (xInteger + yInteger + zInteger) % 2 == 0;
+    return isEven ? even->value(u, v, p) : odd->value(u, v, p);
+  }
 
-        return isEven ? even->value(u, v, p) : odd->value(u, v, p);
-    }
-
-  private:
-    double inv_scale;
-    SharedPtr<texture> even;
-    SharedPtr<texture> odd;
+private:
+  double inv_scale;
+  SharedPtr<rt_texture> even;
+  SharedPtr<rt_texture> odd;
 };
 
+class noise_texture : public rt_texture {
+public:
+  noise_texture(unsigned &rng) : noise(rng) {}
 
-class noise_texture : public texture {
-  public:
-    noise_texture(unsigned &rng) : noise(rng) {}
+  noise_texture(double sc, unsigned &rng) : noise(rng), scale(sc) {}
 
-    noise_texture(double sc, unsigned &rng) : noise(rng), scale(sc) {}
+  color value(double u, double v, const point3 &p) const override {
+    auto s = scale * p;
+    return color(1, 1, 1) * 0.5 * (1 + sin(s.z() + 10 * noise.turb(s)));
+  }
 
-    color value(double u, double v, const point3& p) const override {
-        auto s = scale * p;
-        return color(1,1,1)*0.5*(1 + sin(s.z() + 10*noise.turb(s)));
-    }
-
-  private:
-    perlin noise;
-    double scale;
+private:
+  perlin noise;
+  double scale;
 };
 
+class image_texture : public rt_texture {
+public:
+  image_texture(const char *filename) : image(filename) {}
 
-class image_texture : public texture {
-  public:
-    image_texture(const char* filename) : image(filename) {}
+  color value(double u, double v, const point3 &p) const override {
+    // If we have no rt_texture data, then return solid cyan as a debugging aid.
+    if (image.height() <= 0)
+      return color(0, 1, 1);
 
-    color value(double u, double v, const point3& p) const override {
-        // If we have no texture data, then return solid cyan as a debugging aid.
-        if (image.height() <= 0) return color(0,1,1);
+    // Clamp input rt_texture coordinates to [0,1] x [1,0]
+    u = interval(0, 1).clamp(u);
+    v = 1.0 - interval(0, 1).clamp(v); // Flip V to image coordinates
 
-        // Clamp input texture coordinates to [0,1] x [1,0]
-        u = interval(0,1).clamp(u);
-        v = 1.0 - interval(0,1).clamp(v);  // Flip V to image coordinates
+    auto i = static_cast<int>(u * image.width());
+    auto j = static_cast<int>(v * image.height());
+    auto pixel = image.pixel_data(i, j);
 
-        auto i = static_cast<int>(u * image.width());
-        auto j = static_cast<int>(v * image.height());
-        auto pixel = image.pixel_data(i,j);
+    auto color_scale = 1.0 / 255.0;
+    return color(color_scale * pixel[0], color_scale * pixel[1],
+                 color_scale * pixel[2]);
+  }
 
-        auto color_scale = 1.0 / 255.0;
-        return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
-    }
-
-  private:
-    rtw_image image;
+private:
+  rtw_image image;
 };
-
 
 #endif

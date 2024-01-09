@@ -47,7 +47,7 @@ class lambertian : public material {
   public:
     __host__ __device__ lambertian(const color &a)
         : albedo(makeShared<solid_color>(a)) {}
-    __host__ __device__ lambertian(SharedPtr<texture> a) : albedo(a) {}
+    __host__ __device__ lambertian(SharedPtr<rt_texture> a) : albedo(a) {}
 
     virtual __host__ __device__ bool scatter(const ray &r_in,
                                              const hit_record &rec,
@@ -66,7 +66,7 @@ class lambertian : public material {
     }
 
   private:
-    SharedPtr<texture> albedo;
+    SharedPtr<rt_texture> albedo;
 };
 
 
@@ -133,7 +133,7 @@ class dielectric : public material {
 
 class diffuse_light : public material {
   public:
-    __host__ __device__ diffuse_light(SharedPtr<texture> a) : emit(a) {}
+    __host__ __device__ diffuse_light(SharedPtr<rt_texture> a) : emit(a) {}
     __host__ __device__ diffuse_light(color c)
         : emit(makeShared<solid_color>(c)) {}
 
@@ -149,7 +149,7 @@ class diffuse_light : public material {
     }
 
   private:
-    SharedPtr<texture> emit;
+    SharedPtr<rt_texture> emit;
 };
 
 
@@ -157,7 +157,7 @@ class isotropic : public material {
   public:
     __host__ __device__ isotropic(color c)
         : albedo(makeShared<solid_color>(c)) {}
-    __host__ __device__ isotropic(SharedPtr<texture> a) : albedo(a) {}
+    __host__ __device__ isotropic(SharedPtr<rt_texture> a) : albedo(a) {}
 
     __host__ __device__ bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, unsigned& rnd)
     const override {
@@ -167,7 +167,7 @@ class isotropic : public material {
     }
 
   private:
-    SharedPtr<texture> albedo;
+    SharedPtr<rt_texture> albedo;
 };
 
 

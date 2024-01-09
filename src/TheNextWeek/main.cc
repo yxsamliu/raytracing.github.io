@@ -24,6 +24,7 @@
 #include <map>
 
 rtw_image::TexDBTy rtw_image::TexDB;
+__device__ rtw_image::TexDBTy *rtw_image::DevTexDB;
 
 class Scene {
 public:

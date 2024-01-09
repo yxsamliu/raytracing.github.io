@@ -12,10 +12,16 @@ public:
   // Default constructor
   DeviceArray() : DeviceData(nullptr) {}
 
-  // Constructor to initialize both host and device data
-  DeviceArray(size_t N) : HostData(N), DeviceData(nullptr) {
+  // Constructor to initialize both host and device data with optional data copy
+  DeviceArray(size_t N, const T *hostData = nullptr)
+      : HostData(N), DeviceData(nullptr) {
     checkHIP(hipMalloc((void **)&DeviceData, N * sizeof(T)),
              "Unable to allocate device memory");
+
+    if (hostData != nullptr) {
+      std::copy(hostData, hostData + N, HostData.begin());
+      toDevice(); // Copy data from host to device
+    }
   }
 
   // Destructor to free device memory

@@ -1,5 +1,13 @@
 #pragma once
 
+__host__ __device__ size_t simple_strlen(const char *str) {
+  size_t length = 0;
+  while (str[length] != '\0') {
+    length++;
+  }
+  return length;
+}
+
 class String {
 private:
   char *data;
@@ -8,10 +16,10 @@ private:
 public:
   // Constructor
   __host__ __device__ String(const char *str) {
-    _length = str ? strlen(str) : 0;
+    _length = str ? simple_strlen(str) : 0;
     data = new char[_length + 1]; // +1 for the null terminator
     if (str) {
-      memcpy(data, str, _length + 1);
+      __builtin_memcpy(data, str, _length + 1);
     } else {
       data[0] = '\0';
     }

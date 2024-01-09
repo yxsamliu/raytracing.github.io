@@ -19,6 +19,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image.h"
 
+#include "DeviceArray.h"
 #include "Map.h"
 #include "String.h"
 #include <cstdlib>
@@ -87,6 +88,15 @@ class rtw_image {
       // STBI_FREE(data);
     }
 
+    static __global__ void textureLoadKernel(int width, int height,
+                                             const char *name,
+                                             unsigned char *data_) {
+      if (!DevTexDB)
+        DevTexDB = new TexDBTy;
+      auto Loc = DevTexDB->find(name);
+      if (Loc == DevTexDB->end())
+        (*DevTexDB)[name] = makeShared<rtw_image>(width, height, data_);
+    }
     static bool load(const std::string filename) {
       // Loads image data from the given file name. Returns true if the load
       // succeeded.
@@ -102,8 +112,14 @@ class rtw_image {
         if (lastSlashPos != std::string::npos)
           name = name.substr(lastSlashPos + 1);
         auto Loc = TexDB.find(name.c_str());
-        if (Loc == TexDB.end())
+        if (Loc == TexDB.end()) {
           TexDB[name.c_str()] = makeShared<rtw_image>(width, height, data_);
+          DeviceArray<char> devName(name.length() + 1, name.c_str());
+          DeviceArray<unsigned char> devTexture(width * height * n, data_);
+
+          textureLoadKernel<<<1, 1>>>(width, height, devName.getDevicePtr(),
+                                      devTexture.getDevicePtr());
+        }
       }
       return data_ != nullptr;
     }
@@ -145,6 +161,7 @@ class rtw_image {
 
     typedef Map<String, SharedPtr<rtw_image>> TexDBTy;
     static TexDBTy TexDB;
+    __device__ static TexDBTy *DevTexDB;
 };
 
 

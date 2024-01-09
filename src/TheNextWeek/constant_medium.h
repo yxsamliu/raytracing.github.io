@@ -21,7 +21,7 @@
 class constant_medium : public hittable {
   public:
     __host__ __device__ constant_medium(SharedPtr<hittable> b, double d,
-                                        SharedPtr<texture> a)
+                                        SharedPtr<rt_texture> a)
         : boundary(b), neg_inv_density(-1 / d),
           phase_function(makeShared<isotropic>(a)) {}
 

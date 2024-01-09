@@ -558,24 +558,6 @@ public:
 int main(int argc, char *argv[]) {
   std::string scene = "final_coarse"; // default scene
   bool runAll = false;
-
-  // Parse command line arguments
-  for (int i = 1; i < argc; i++) {
-    if (std::string(argv[i]) == "-s") {
-      if (i + 1 < argc) {
-        scene = argv[++i];
-        if (scene == "all") {
-          runAll = true;
-          break;
-        }
-      }
-    } else if (strcmp(argv[i], "-t") == 0) {
-      Cfg.output_time = true;
-    } else if (strcmp(argv[i], "-c") == 0) {
-      Cfg.compare_cpu = true;
-    }
-  }
-
   rtw_image::pre_load("earthmap.jpg");
 
   // Vector of pairs to store scene names and their corresponding functions
@@ -594,6 +576,43 @@ int main(int argc, char *argv[]) {
       {"final_detailed",
        []() { Test<final_scene>::run(800, 10000, 40, "final_detailed"); }},
   };
+
+  // Construct a string of allowed scene names
+  std::string allowedScenes;
+  for (const auto &pair : scenes) {
+    if (!allowedScenes.empty()) {
+      allowedScenes += ", ";
+    }
+    allowedScenes += pair.first;
+  }
+
+  // Parse command line arguments
+  for (int i = 1; i < argc; i++) {
+    if (std::string(argv[i]) == "-s") {
+      if (i + 1 < argc) {
+        scene = argv[++i];
+        if (scene == "all") {
+          runAll = true;
+          break;
+        }
+      }
+    } else if (strcmp(argv[i], "-t") == 0) {
+      Cfg.output_time = true;
+    } else if (strcmp(argv[i], "-c") == 0) {
+      Cfg.compare_cpu = true;
+    } else if (strcmp(argv[i], "-h") == 0) {
+      std::cout << "Usage: program_name [options]\n"
+                << "Options:\n"
+                << "  -s [scene_name]  Run a specific scene or 'all' for "
+                   "running all scenes\n"
+                << "                    Allowed scenes: " << allowedScenes
+                << "\n"
+                << "  -t               Enable output time\n"
+                << "  -c               Compare CPU performance\n"
+                << "  -h               Display this help message\n";
+      return 0;
+    }
+  }
 
   if (runAll) {
     // Run all tests

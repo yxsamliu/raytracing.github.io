@@ -1,14 +1,26 @@
 #pragma once
 
-#include <list>
+#include "List.h"
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
+template <typename T1, typename T2> class Pair {
+public:
+  T1 first;
+  T2 second;
+
+  // Constructor
+  __host__ __device__ Pair(const T1 &a, const T2 &b) : first(a), second(b) {}
+
+  // Default constructor
+  __host__ __device__ Pair() : first(T1()), second(T2()) {}
+};
+
 template <typename KeyType, typename ValueType> class Map {
 private:
   size_t bucketCount;
-  std::vector<std::list<std::pair<KeyType, ValueType>>> buckets;
+  std::vector<List<Pair<KeyType, ValueType>>> buckets;
 
   __host__ __device__ size_t getBucketIndex(const KeyType &key) const {
     return std::hash<KeyType>{}(key) % bucketCount;
@@ -89,18 +101,14 @@ public:
   // Custom iterator class
   class Iterator {
   private:
-    typename std::vector<std::list<std::pair<KeyType, ValueType>>>::iterator
-        bucketIt;
-    typename std::vector<std::list<std::pair<KeyType, ValueType>>>::iterator
-        bucketItEnd;
-    typename std::list<std::pair<KeyType, ValueType>>::iterator listIt;
+    typename std::vector<List<Pair<KeyType, ValueType>>>::iterator bucketIt;
+    typename std::vector<List<Pair<KeyType, ValueType>>>::iterator bucketItEnd;
+    typename List<Pair<KeyType, ValueType>>::iterator listIt;
 
   public:
     __host__ __device__ Iterator(
-        typename std::vector<std::list<std::pair<KeyType, ValueType>>>::iterator
-            start,
-        typename std::vector<std::list<std::pair<KeyType, ValueType>>>::iterator
-            end)
+        typename std::vector<List<Pair<KeyType, ValueType>>>::iterator start,
+        typename std::vector<List<Pair<KeyType, ValueType>>>::iterator end)
         : bucketIt(start), bucketItEnd(end) {
       if (bucketIt != bucketItEnd) {
         listIt = bucketIt->begin();
@@ -122,11 +130,11 @@ public:
       return *this;
     }
 
-    __host__ __device__ std::pair<KeyType, ValueType> *operator->() {
+    __host__ __device__ Pair<KeyType, ValueType> *operator->() {
       return &(*listIt);
     }
 
-    __host__ __device__ std::pair<KeyType, ValueType> &operator*() {
+    __host__ __device__ Pair<KeyType, ValueType> &operator*() {
       return *listIt;
     }
 

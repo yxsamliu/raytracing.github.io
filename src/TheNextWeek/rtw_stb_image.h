@@ -23,7 +23,6 @@
 #include "String.h"
 #include <cstdlib>
 #include <iostream>
-#include <unordered_map>
 
 class rtw_image {
   public:

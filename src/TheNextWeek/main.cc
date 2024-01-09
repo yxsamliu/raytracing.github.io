@@ -23,6 +23,7 @@
 #include <functional>
 #include <map>
 
+// Texture database, which maps file name to a pointer to texture data.
 rtw_image::TexDBTy rtw_image::TexDB;
 __device__ rtw_image::TexDBTy *rtw_image::DevTexDB;
 
@@ -44,15 +45,23 @@ public:
     S s(image_width, samples_per_pixel, max_depth);
     s.render(file_name);
   }
+  static __global__ void devSceneInitKernel() {
+    if (!devScene)
+      devScene = new S;
+  }
   static void run(const std::string &file_name) {
     S s;
     s.render(file_name);
+    devSceneInitKernel<<<1, 1>>>();
   }
+  static __device__ S *devScene;
 };
+
+template <typename S> __device__ S *Test<S>::devScene;
 
 class random_spheres : public Scene {
 public:
-  random_spheres() {
+  __host__ __device__ random_spheres() {
     unsigned rng = 0;
     auto checker =
         makeShared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
@@ -119,7 +128,7 @@ public:
 
 class two_spheres : public Scene {
 public:
-  two_spheres() {
+  __host__ __device__ two_spheres() {
     auto checker =
         makeShared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
 
@@ -145,7 +154,7 @@ public:
 
 class earth : public Scene {
 public:
-  earth() {
+  __host__ __device__ earth() {
     auto earth_texture = makeShared<image_texture>("earthmap.jpg");
     auto earth_surface = makeShared<lambertian>(earth_texture);
     auto globe = makeShared<sphere>(point3(0, 0, 0), 2, earth_surface);
@@ -169,7 +178,7 @@ public:
 
 class two_perlin_spheres : public Scene {
 public:
-  two_perlin_spheres() {
+  __host__ __device__ two_perlin_spheres() {
     unsigned rng = 0;
     auto pertext = makeShared<noise_texture>(4, rng);
     world.add(makeShared<sphere>(point3(0, -1000, 0), 1000,
@@ -194,7 +203,7 @@ public:
 
 class quads : public Scene {
 public:
-  quads() {
+  __host__ __device__ quads() {
     // Materials
     auto left_red = makeShared<lambertian>(color(1.0, 0.2, 0.2));
     auto back_green = makeShared<lambertian>(color(0.2, 1.0, 0.2));
@@ -231,7 +240,7 @@ public:
 
 class simple_light : public Scene {
 public:
-  simple_light() {
+  __host__ __device__ simple_light() {
     unsigned rng = 0;
     auto pertext = makeShared<noise_texture>(4, rng);
     world.add(makeShared<sphere>(point3(0, -1000, 0), 1000,
@@ -261,7 +270,7 @@ public:
 
 class cornell_box : public Scene {
 public:
-  cornell_box() {
+  __host__ __device__ cornell_box() {
     auto red = makeShared<lambertian>(color(.65, .05, .05));
     auto white = makeShared<lambertian>(color(.73, .73, .73));
     auto green = makeShared<lambertian>(color(.12, .45, .15));
@@ -309,7 +318,7 @@ public:
 
 class cornell_smoke : public Scene {
 public:
-  cornell_smoke() {
+  __host__ __device__ cornell_smoke() {
     auto red = makeShared<lambertian>(color(.65, .05, .05));
     auto white = makeShared<lambertian>(color(.73, .73, .73));
     auto green = makeShared<lambertian>(color(.12, .45, .15));
@@ -358,7 +367,8 @@ public:
 
 class final_scene : public Scene {
 public:
-  final_scene(int image_width, int samples_per_pixel, int max_depth) {
+  __host__ __device__ final_scene(int image_width, int samples_per_pixel,
+                                  int max_depth) {
     unsigned rng = 0;
     hittable_list boxes1;
     auto ground = makeShared<lambertian>(color(0.48, 0.83, 0.53));

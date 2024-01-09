@@ -22,7 +22,8 @@ $(PROGRAM): $(OBJECTS)
 
 main.o : main.cc camera.h  color.h  hittable.h  hittable_list.h  interval.h  material.h  \
    PPMImageFile.h  ray.h  rtweekend.h  rtw_stb_image.h  sphere.h  vec3.h DeviceArray.h \
-   Makefile SharedPtr.h Vector.h aabb.h String.h Map.h
+   Makefile SharedPtr.h Vector.h aabb.h String.h Map.h List.h bvh.h constant_medium.h \
+   hipUtils.h quad.h texture.h
 
 # Clean target
 clean:

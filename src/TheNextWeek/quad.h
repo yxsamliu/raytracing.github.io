@@ -89,8 +89,8 @@ class quad : public hittable {
     vec3 w;
 };
 
-inline SharedPtr<hittable_list> box(const point3 &a, const point3 &b,
-                                    SharedPtr<material> mat) {
+__host__ __device__ inline SharedPtr<hittable_list>
+box(const point3 &a, const point3 &b, SharedPtr<material> mat) {
   // Returns the 3D box (six sides) that contains the two opposite vertices a &
   // b.
 

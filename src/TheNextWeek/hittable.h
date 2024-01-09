@@ -93,7 +93,8 @@ class translate : public hittable {
 
 class rotate_y : public hittable {
   public:
-    rotate_y(SharedPtr<hittable> p, double angle) : object(p) {
+    __host__ __device__ rotate_y(SharedPtr<hittable> p, double angle)
+        : object(p) {
       auto radians = degrees_to_radians(angle);
       sin_theta = sin(radians);
       cos_theta = cos(radians);

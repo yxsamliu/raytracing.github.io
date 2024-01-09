@@ -155,10 +155,10 @@ public:
 
           if (topDifferences.size() < 10) {
             topDifferences.push_back({diff, x, y});
-            std::sort(topDifferences.begin(), topDifferences.end(),
-                      [](const Difference &a, const Difference &b) {
-                        return a.value > b.value;
-                      });
+            sort(topDifferences.begin(), topDifferences.end(),
+                 [](const Difference &a, const Difference &b) {
+                   return a.value > b.value;
+                 });
           }
         }
       }

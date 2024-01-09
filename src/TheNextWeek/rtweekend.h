@@ -31,8 +31,8 @@ using std::sqrt;
 
 // Constants
 
-const double infinity = std::numeric_limits<double>::infinity();
-const double pi = 3.1415926535897932385;
+constexpr double infinity = std::numeric_limits<double>::infinity();
+constexpr double pi = 3.1415926535897932385;
 
 // Configure
 struct TestConfig {
@@ -75,6 +75,27 @@ __host__ __device__ inline int random_int(int min, int max, unsigned &rnd) {
   return static_cast<int>(random_double(min, max + 1, rnd));
 }
 
+template <typename T> __host__ __device__ void rt_swap(T &a, T &b) {
+  T temp = a;
+  a = b;
+  b = temp;
+}
+
+template <typename RandomAccessIterator, typename Comparator>
+__host__ __device__ void sort(RandomAccessIterator first,
+                              RandomAccessIterator last, Comparator comp) {
+  bool swapped = true;
+  while (first != last-- && swapped) {
+    swapped = false;
+    for (auto i = first; i != last; ++i) {
+      // Use the comparator to check if the elements are in the wrong order
+      if (comp(*(i + 1), *i)) {
+        rt_swap(*i, *(i + 1));
+        swapped = true;
+      }
+    }
+  }
+}
 // Common Headers
 
 #include "interval.h"

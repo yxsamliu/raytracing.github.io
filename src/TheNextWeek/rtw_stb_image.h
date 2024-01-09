@@ -34,8 +34,14 @@ class rtw_image {
     }
 
     __host__ __device__ rtw_image(const char *image_filename) {
-      auto Loc = TexDB.find(image_filename);
-      if (Loc == TexDB.end()) {
+      TexDBTy *pDB;
+#if __HIP_DEVICE_COMPILE__
+      pDB = DevTexDB;
+#else
+      pDB = &TexDB;
+#endif
+      auto Loc = pDB->find(image_filename);
+      if (Loc == pDB->end()) {
         printf("texture %s not found. Please pre_load it.\n", image_filename);
         __builtin_trap();
       }

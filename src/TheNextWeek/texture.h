@@ -20,17 +20,19 @@ class rt_texture {
 public:
   virtual ~rt_texture() = default;
 
-  virtual color value(double u, double v, const point3 &p) const = 0;
+  virtual __host__ __device__ color value(double u, double v,
+                                          const point3 &p) const = 0;
 };
 
 class solid_color : public rt_texture {
 public:
-  solid_color(color c) : color_value(c) {}
+  __host__ __device__ solid_color(color c) : color_value(c) {}
 
-  solid_color(double red, double green, double blue)
+  __host__ __device__ solid_color(double red, double green, double blue)
       : solid_color(color(red, green, blue)) {}
 
-  color value(double u, double v, const point3 &p) const override {
+  __host__ __device__ color value(double u, double v,
+                                  const point3 &p) const override {
     return color_value;
   }
 
@@ -40,15 +42,17 @@ private:
 
 class checker_texture : public rt_texture {
 public:
-  checker_texture(double _scale, SharedPtr<rt_texture> _even,
-                  SharedPtr<rt_texture> _odd)
+  __host__ __device__ checker_texture(double _scale,
+                                      SharedPtr<rt_texture> _even,
+                                      SharedPtr<rt_texture> _odd)
       : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
 
-  checker_texture(double _scale, color c1, color c2)
+  __host__ __device__ checker_texture(double _scale, color c1, color c2)
       : inv_scale(1.0 / _scale), even(makeShared<solid_color>(c1)),
         odd(makeShared<solid_color>(c2)) {}
 
-  color value(double u, double v, const point3 &p) const override {
+  __host__ __device__ color value(double u, double v,
+                                  const point3 &p) const override {
     auto xInteger = static_cast<int>(std::floor(inv_scale * p.x()));
     auto yInteger = static_cast<int>(std::floor(inv_scale * p.y()));
     auto zInteger = static_cast<int>(std::floor(inv_scale * p.z()));
@@ -66,11 +70,13 @@ private:
 
 class noise_texture : public rt_texture {
 public:
-  noise_texture(unsigned &rng) : noise(rng) {}
+  __host__ __device__ noise_texture(unsigned &rng) : noise(rng) {}
 
-  noise_texture(double sc, unsigned &rng) : noise(rng), scale(sc) {}
+  __host__ __device__ noise_texture(double sc, unsigned &rng)
+      : noise(rng), scale(sc) {}
 
-  color value(double u, double v, const point3 &p) const override {
+  __host__ __device__ color value(double u, double v,
+                                  const point3 &p) const override {
     auto s = scale * p;
     return color(1, 1, 1) * 0.5 * (1 + sin(s.z() + 10 * noise.turb(s)));
   }
@@ -82,9 +88,10 @@ private:
 
 class image_texture : public rt_texture {
 public:
-  image_texture(const char *filename) : image(filename) {}
+  __host__ __device__ image_texture(const char *filename) : image(filename) {}
 
-  color value(double u, double v, const point3 &p) const override {
+  __host__ __device__ color value(double u, double v,
+                                  const point3 &p) const override {
     // If we have no rt_texture data, then return solid cyan as a debugging aid.
     if (image.height() <= 0)
       return color(0, 1, 1);

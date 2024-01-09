@@ -23,10 +23,10 @@ class interval {
   public:
     double min, max;
 
-    __host__ __device__ interval()
+    constexpr __host__ __device__ interval()
         : min(+infinity), max(-infinity) {} // Default interval is empty
 
-    __host__ __device__ interval(double _min, double _max)
+    constexpr __host__ __device__ interval(double _min, double _max)
         : min(_min), max(_max) {}
 
     __host__ __device__ double size() const { return max - min; }
@@ -58,8 +58,8 @@ class interval {
     static const interval empty, universe;
 };
 
-const interval interval::empty    = interval(+infinity, -infinity);
-const interval interval::universe = interval(-infinity, +infinity);
+constexpr interval interval::empty = interval(+infinity, -infinity);
+constexpr interval interval::universe = interval(-infinity, +infinity);
 
 __host__ __device__ interval operator+(const interval &ival,
                                        double displacement) {

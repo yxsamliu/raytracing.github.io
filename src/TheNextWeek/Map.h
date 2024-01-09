@@ -2,7 +2,6 @@
 
 #include "List.h"
 #include "Vector.h"
-#include <stdexcept>
 #include <utility>
 
 template <typename T1, typename T2> class Pair {
@@ -99,7 +98,7 @@ public:
   }
 
   // Custom iterator class
-  class Iterator {
+  class iterator {
   private:
     typename Vector<List<Pair<KeyType, ValueType>>>::iterator bucketIt;
     typename Vector<List<Pair<KeyType, ValueType>>>::iterator bucketItEnd;
@@ -107,7 +106,7 @@ public:
 
   public:
     __host__ __device__
-    Iterator(typename Vector<List<Pair<KeyType, ValueType>>>::iterator start,
+    iterator(typename Vector<List<Pair<KeyType, ValueType>>>::iterator start,
              typename Vector<List<Pair<KeyType, ValueType>>>::iterator end)
         : bucketIt(start), bucketItEnd(end) {
       if (bucketIt != bucketItEnd) {
@@ -124,7 +123,7 @@ public:
       }
     }
 
-    __host__ __device__ Iterator &operator++() {
+    __host__ __device__ iterator &operator++() {
       ++listIt;
       advancePastEmptyBuckets();
       return *this;
@@ -138,30 +137,30 @@ public:
       return *listIt;
     }
 
-    __host__ __device__ bool operator==(const Iterator &other) const {
+    __host__ __device__ bool operator==(const iterator &other) const {
       return bucketIt == other.bucketIt &&
              (bucketIt == bucketItEnd || listIt == other.listIt);
     }
 
-    __host__ __device__ bool operator!=(const Iterator &other) const {
+    __host__ __device__ bool operator!=(const iterator &other) const {
       return !(*this == other);
     }
   };
 
-  __host__ __device__ Iterator begin() {
-    return Iterator(buckets.begin(), buckets.end());
+  __host__ __device__ iterator begin() {
+    return iterator(buckets.begin(), buckets.end());
   }
 
-  __host__ __device__ Iterator end() {
-    return Iterator(buckets.end(), buckets.end());
+  __host__ __device__ iterator end() {
+    return iterator(buckets.end(), buckets.end());
   }
 
-  __host__ __device__ Iterator find(const KeyType &key) {
+  __host__ __device__ iterator find(const KeyType &key) {
     size_t bucketIndex = getBucketIndex(key);
     auto &bucket = buckets[bucketIndex];
     for (auto it = bucket.begin(); it != bucket.end(); ++it) {
       if (it->first == key) {
-        return Iterator(buckets.begin() + bucketIndex, buckets.end());
+        return iterator(buckets.begin() + bucketIndex, buckets.end());
       }
     }
     return end();

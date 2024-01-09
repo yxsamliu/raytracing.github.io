@@ -29,9 +29,6 @@ __device__ rtw_image::TexDBTy *rtw_image::DevTexDB;
 
 class Scene {
 public:
-  void render(const std::string &file_name) { cam.render(world, file_name); }
-
-protected:
   hittable_list world;
   camera cam;
 };
@@ -43,16 +40,129 @@ public:
   static void run(int image_width, int samples_per_pixel, int max_depth,
                   const std::string &file_name) {
     S s(image_width, samples_per_pixel, max_depth);
-    s.render(file_name);
-  }
-  static __global__ void devSceneInitKernel() {
-    if (!devScene)
-      devScene = new S;
+    devSceneInitKernel<<<1, 1>>>(image_width, samples_per_pixel, max_depth);
+    run(s, file_name);
   }
   static void run(const std::string &file_name) {
     S s;
-    s.render(file_name);
     devSceneInitKernel<<<1, 1>>>();
+    run(s, file_name);
+  }
+  static __global__ void devSceneInitKernel() {
+    if (!devScene) {
+      devScene = new S;
+      devScene->cam.initialize();
+    }
+  }
+  static __global__ void
+  devSceneInitKernel(int image_width, int samples_per_pixel, int max_depth) {
+    if (!devScene) {
+      devScene = new S(image_width, samples_per_pixel, max_depth);
+      devScene->cam.initialize();
+    }
+  }
+  static __launch_bounds__(BLKDIM_X *BLKDIM_Y) __global__
+      void renderKernel(color *image) {
+    camera &dev_cam = devScene->cam;
+    hittable_list *dev_world = &(devScene->world);
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    if (i < dev_cam.image_width && j < dev_cam.image_height)
+      dev_cam.renderOnePixel(i, j, *dev_world, image);
+  }
+  static void run(S &s, const std::string &file_name) {
+    s.cam.initialize();
+
+    const int grid_x = std::ceil((float)s.cam.image_width / BLKDIM_X);
+    const int grid_y = std::ceil((float)s.cam.image_height / BLKDIM_Y);
+    printf("image width = %d height = %d\n", s.cam.image_width,
+           s.cam.image_height);
+    printf("block size = (%d, %d) grid size = (%d, %d)\n", BLKDIM_X, BLKDIM_Y,
+           grid_x, grid_y);
+
+    std::string ref_file_name = file_name + "_ref.ppm";
+    std::string cpu_file_name;
+    PPMImageFile ref_image(ref_file_name);
+
+    // Check if the reference image file exists
+    std::ifstream ref_file(ref_file_name);
+    if (ref_file.good()) {
+      ref_file.close();
+      // File exists, use a separate name for CPU rendered file
+      cpu_file_name = file_name + "_cpu.ppm";
+
+      // Load reference image
+      ref_image.load();
+    } else {
+      // File does not exist, use its name for the CPU rendered file
+      cpu_file_name = ref_file_name;
+      std::cout << ref_file_name +
+                       " does not exist. Save CPU rendered image to it.\n";
+    }
+    PPMImageFile cpu_image(cpu_file_name, s.cam.image_width,
+                           s.cam.image_height);
+    std::chrono::duration<double, std::milli> cpu_duration;
+    if (Cfg.compare_cpu) {
+      std::cout << std::string("Start rendering ") + cpu_file_name +
+                       " by CPU.\n";
+      auto start_cpu = std::chrono::high_resolution_clock::now();
+      s.cam.render(s.world, cpu_image.getHostPtr());
+      auto end_cpu = std::chrono::high_resolution_clock::now();
+      cpu_duration = end_cpu - start_cpu;
+      cpu_image.normalize();
+      cpu_image.save();
+      cpu_image.compare(ref_image);
+
+      // Conditionally output timing information
+      if (Cfg.output_time) {
+        int total_pixels = s.cam.image_width * s.cam.image_height;
+        double cpu_time_per_pixel = cpu_duration.count() / total_pixels;
+        printf("CPU Time: %f s\n", cpu_duration.count() / 1000);
+        printf("CPU Time per Pixel: %f ms\n", cpu_time_per_pixel);
+      }
+    }
+
+    std::string gpu_file_name = file_name + "_gpu.ppm";
+    PPMImageFile gpu_image(gpu_file_name, s.cam.image_width,
+                           s.cam.image_height);
+    DeviceArray<color> gpu_image_data(s.cam.image_width * s.cam.image_height);
+    // Need to set stack size since there is recursive function.
+    checkHIP(hipDeviceSetLimit(hipLimitStackSize, 8192));
+
+    checkHIP(hipDeviceSynchronize());
+
+    // Render by GPU and measure time.
+    printf("Start rendering by GPU.\n");
+    hipEvent_t start_gpu, stop_gpu;
+    checkHIP(hipEventCreate(&start_gpu));
+    checkHIP(hipEventCreate(&stop_gpu));
+    checkHIP(hipEventRecord(start_gpu));
+    renderKernel<<<dim3(grid_x, grid_y), dim3(BLKDIM_X, BLKDIM_Y)>>>(
+        gpu_image_data.getDevicePtr());
+    checkHIP(hipEventRecord(stop_gpu));
+    checkHIP(hipEventSynchronize(stop_gpu));
+    float gpu_duration_ms = 0;
+    checkHIP(hipEventElapsedTime(&gpu_duration_ms, start_gpu, stop_gpu));
+    checkHIP(hipEventDestroy(start_gpu));
+    checkHIP(hipEventDestroy(stop_gpu));
+    printf("Done.\n");
+
+    checkHIP(hipDeviceSynchronize());
+    gpu_image_data.toHost();
+    checkHIP(hipDeviceSynchronize());
+    gpu_image.setData(gpu_image_data.getHostPtr());
+    gpu_image.normalize();
+    gpu_image.save();
+    if (Cfg.compare_cpu)
+      gpu_image.compare(cpu_image);
+    gpu_image.compare(ref_image);
+
+    // Conditionally output timing information
+    if (Cfg.output_time) {
+      int total_pixels = s.cam.image_width * s.cam.image_height;
+      double gpu_time_per_pixel = gpu_duration_ms / total_pixels;
+      printf("GPU Time per Pixel: %f ms\n", gpu_time_per_pixel);
+    }
   }
   static __device__ S *devScene;
 };

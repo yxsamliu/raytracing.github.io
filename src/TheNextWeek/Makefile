@@ -2,7 +2,7 @@
 CXX = /opt/rocm/llvm/bin/clang++
 #CXX = /home/yaxunl/git/llvm2/assert/bin/clang++
 # Compiler flags
-CXXFLAGS = --offload-arch=gfx1100 -Wall -Wextra -std=c++17 -O3 -Xarch_device -O3 -ggdb -Wno-unused-parameter
+CXXFLAGS = --offload-arch=gfx1100 -save-temps -Wall -Wextra -std=c++17 -O1 -mllvm -enable-misched=false -mllvm -enable-post-misched=false -ggdb -Wno-unused-parameter
 
 # Program name
 PROGRAM = TheNextWeek
@@ -29,6 +29,12 @@ main.o : main.cc camera.h  color.h  hittable.h  hittable_list.h  interval.h  mat
 clean:
 	rm -f $(PROGRAM) $(OBJECTS)
 
+debug: $(PROGRAM)
+	/opt/rocm/bin/rocgdb --args ./TheNextWeek -s two_spheres
+
+test: $(PROGRAM)
+	AMD_LOG_LEVEL=3 ./TheNextWeek -s two_spheres
+
 # PHONY targets
-.PHONY: clean
+.PHONY: clean debug test
 

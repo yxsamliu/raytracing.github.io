@@ -3,7 +3,7 @@
 CXX = /home/yaxunl/git/llvm2/assert/bin/clang++
 # Compiler flags
 #CXXFLAGS = --offload-arch=gfx1100 -save-temps -Wall -Wextra -std=c++17 -O3 -mllvm -enable-misched=false -mllvm -enable-post-misched=false -ggdb -Wno-unused-parameter
-CXXFLAGS = --offload-arch=gfx1100 --rocm-path=/home/yaxunl/buildbot/Externals/hip/rocm-6.0.0 -DNDEBUG -Wall -Wextra -std=c++17 -O3 -Wno-unused-parameter
+CXXFLAGS = -mfma --offload-arch=gfx1100 --rocm-path=/home/yaxunl/buildbot/Externals/hip/rocm-6.0.0 -DNDEBUG -Wall -Wextra -std=c++17 -O3 -Wno-unused-parameter
 
 # Program name
 PROGRAM = TheNextWeek

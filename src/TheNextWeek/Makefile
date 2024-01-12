@@ -1,8 +1,9 @@
 # Compiler
-CXX = /opt/rocm/llvm/bin/clang++
-#CXX = /home/yaxunl/git/llvm2/assert/bin/clang++
+#CXX = /opt/rocm/llvm/bin/clang++
+CXX = /home/yaxunl/git/llvm2/assert/bin/clang++
 # Compiler flags
-CXXFLAGS = --offload-arch=gfx1100 -save-temps -Wall -Wextra -std=c++17 -O1 -mllvm -enable-misched=false -mllvm -enable-post-misched=false -ggdb -Wno-unused-parameter
+#CXXFLAGS = --offload-arch=gfx1100 -save-temps -Wall -Wextra -std=c++17 -O3 -mllvm -enable-misched=false -mllvm -enable-post-misched=false -ggdb -Wno-unused-parameter
+CXXFLAGS = --offload-arch=gfx1100 --rocm-path=/home/yaxunl/buildbot/Externals/hip/rocm-6.0.0 -DNDEBUG -Wall -Wextra -std=c++17 -O3 -Wno-unused-parameter
 
 # Program name
 PROGRAM = TheNextWeek
@@ -14,7 +15,7 @@ OBJECTS = $(SOURCES:.cc=.o)
 
 # Build target
 $(PROGRAM): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) --hip-link -o $(PROGRAM) $(OBJECTS)
+	$(CXX) $(CXXFLAGS) --rocm-path=/home/yaxunl/buildbot/Externals/hip/rocm-6.0.0 --hip-link -rtlib=compiler-rt -unwindlib=libgcc -frtlib-add-rpath -o $(PROGRAM) $(OBJECTS)
 
 # Rule for building object files
 %.o: %.cc

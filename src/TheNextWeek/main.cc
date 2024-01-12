@@ -1,12 +1,22 @@
 //==============================================================================================
 // Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
-// To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is
-// distributed without any warranty.
+// To the extent possible under law, the author(s) have dedicated all copyright
+// and related and neighboring rights to this software to the public domain
+// worldwide. This software is distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
-// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+// You should have received a copy (see file COPYING.txt) of the CC0 Public
+// Domain Dedication along with this software. If not, see
+// <http://creativecommons.org/publicdomain/zero/1.0/>.
+//
+// The original source code is from
+//    https://github.com/RayTracing/raytracing.github.io/tree/release/src/TheNextWeek
+//
+// Changes to the original code follow the following license.
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //==============================================================================================
 
 #include "rtweekend.h"
@@ -127,7 +137,7 @@ public:
                            s.cam.image_height);
     DeviceArray<color> gpu_image_data(s.cam.image_width * s.cam.image_height);
     // Need to set stack size since there is recursive function.
-    checkHIP(hipDeviceSetLimit(hipLimitStackSize, 8192));
+    checkHIP(hipDeviceSetLimit(hipLimitStackSize, 16384));
 
     checkHIP(hipDeviceSynchronize());
 
@@ -556,15 +566,16 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-  std::string scene = "final_coarse"; // default scene
+  std::vector<std::string> scenesToRun;
   bool runAll = false;
+  bool explicitScenes = false; // Indicates if scenes are explicitly specified
   rtw_image::pre_load("earthmap.jpg");
 
   // Vector of pairs to store scene names and their corresponding functions
   std::vector<std::pair<std::string, std::function<void()>>> scenes = {
       {"quads", []() { Test<quads>::run("quads"); }},
-      {"two_spheres", []() { Test<two_spheres>::run("two_spheres"); }},
       {"earth", []() { Test<earth>::run("earth"); }},
+      {"two_spheres", []() { Test<two_spheres>::run("two_spheres"); }},
       {"two_perlin_spheres",
        []() { Test<two_perlin_spheres>::run("two_perlin_spheres"); }},
       {"simple_light", []() { Test<simple_light>::run("simple_light"); }},
@@ -587,13 +598,17 @@ int main(int argc, char *argv[]) {
   }
 
   // Parse command line arguments
+  // Parse command line arguments
   for (int i = 1; i < argc; i++) {
     if (std::string(argv[i]) == "-s") {
       if (i + 1 < argc) {
-        scene = argv[++i];
-        if (scene == "all") {
+        std::string nextArg = argv[++i];
+        if (nextArg == "all") {
           runAll = true;
           break;
+        } else {
+          scenesToRun.push_back(nextArg);
+          explicitScenes = true;
         }
       }
     } else if (strcmp(argv[i], "-t") == 0) {
@@ -614,6 +629,16 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if (!runAll && !explicitScenes) {
+    for (const auto &pair : scenes) {
+      // disable final_detailed by default since it takes long time.
+      // temporarily disable final_coarse due to regression.
+      if (pair.first != "final_detailed" && pair.first != "final_coarse") {
+        scenesToRun.push_back(pair.first);
+      }
+    }
+  }
+
   if (runAll) {
     // Run all tests
     for (auto &test : scenes) {
@@ -621,18 +646,18 @@ int main(int argc, char *argv[]) {
       test.second();
     }
   } else {
-    // Find and run the specified scene
-    bool found = false;
-    for (const auto &pair : scenes) {
-      if (pair.first == scene) {
-        pair.second(); // Run the scene
-        found = true;
-        break;
+    for (const auto &sceneName : scenesToRun) {
+      auto it = std::find_if(
+          scenes.begin(), scenes.end(),
+          [&](const std::pair<std::string, std::function<void()>> &pair) {
+            return pair.first == sceneName;
+          });
+      if (it != scenes.end()) {
+        std::cout << "Running " << sceneName << std::endl;
+        it->second();
+      } else {
+        std::cerr << "Unknown scene: " << sceneName << std::endl;
       }
-    }
-    if (!found) {
-      std::cerr << "Unknown scene: " << scene << std::endl;
-      return 1;
     }
   }
 

@@ -1,4 +1,9 @@
 #pragma once
+//==============================================================================================
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//==============================================================================================
 
 __host__ __device__ size_t simple_strlen(const char *str) {
   size_t length = 0;

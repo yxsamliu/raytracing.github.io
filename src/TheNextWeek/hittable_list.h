@@ -12,7 +12,7 @@
 // <http://creativecommons.org/publicdomain/zero/1.0/>.
 //
 // The original source code is from
-//    https://github.com/RayTracing/raytracing.github.io/tree/release/src/InOneWeekend
+//    https://github.com/RayTracing/raytracing.github.io/tree/release/src/TheNextWeek
 //
 // Changes to the original code follow the following license.
 //

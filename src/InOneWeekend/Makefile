@@ -1,6 +1,6 @@
 # Compiler
-CXX = /opt/rocm/llvm/bin/clang++
-#CXX = /home/yaxunl/git/llvm2/assert/bin/clang++
+#CXX = /opt/rocm/llvm/bin/clang++
+CXX = /home/yaxunl/git/llvm2/assert/bin/clang++
 # Compiler flags
 CXXFLAGS = --offload-arch=gfx1100 -Wall -Wextra -std=c++17 -O3 -ggdb
 
